@@ -1,33 +1,34 @@
 ﻿
 
+using Finall_Project.Enums;
+using System.ComponentModel.DataAnnotations;
+
 namespace LoanAPI.Data
 {
     public class Loan
     {
         public int Id { get; set; }
-        public loanType LoanType { get; set; }
-        public enum loanType
-        {
-            Fast = 1,          
-            Auto = 2,          
-            Installment = 3 }; //ganvadeba
+        public LoanType LoanType { get; set; }
         public int Amount { get; set; }
-        public currency Currency { get; set; }
-        public enum currency
-        {
-            GEL,
-            USD,
-            EUR
-        };
+        public Currency Currency { get; set; }
         public int LoanPeriod { get; set; }
-        public status Status { get; set; }
-        public enum status
-        {
-            In_process,
-            Approved,
-            Rejected
-        };
+        public Status Status { get; set; }
         public User User { get; set; }
-        public int UserID { get; set; }
+        public int UserId { get; set; }
     }
+
+    public class UpdateLoanByID
+    {
+        [Required(ErrorMessage = "LoanType is required")]
+        public LoanType LoanType { get; set; }
+        [Required(ErrorMessage = "Amount is required")]
+        public int Amount { get; set; }
+        [Required(ErrorMessage = "Currency is required")]
+        public Currency Currency { get; set; }
+        [Required(ErrorMessage = "LoanPeriod is required")]
+        public int LoanPeriod { get; set; }
+
+    }
+
 }
+

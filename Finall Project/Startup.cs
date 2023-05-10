@@ -1,7 +1,7 @@
 using Finall_Project.Helpers;
-using Finall_Project.Repository;
 using Finall_Project.Services;
 using LoanAPI.Domain;
+using LoggerService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -13,6 +13,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Text;
+using Microsoft.Extensions.Logging;
+using NLog.Extensions.Logging;
+using NLog;
 
 namespace Finall_Project
 {
@@ -26,13 +29,19 @@ namespace Finall_Project
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
+
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddLogging(loggingBuilder =>
+            {
+                loggingBuilder.ClearProviders();
+                loggingBuilder.AddNLog("nlog.config");
+            });
             services.AddDbContext<UserContext>(opt =>
               opt.UseSqlServer(Configuration.GetConnectionString("LoanAPI"))
                  .EnableSensitiveDataLogging()
                  .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
-
+            services.AddScoped<ILoggerManager, LoggerManager>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ILoanService, LoanService>();
 
@@ -69,7 +78,6 @@ namespace Finall_Project
 
             });
 
-
             var appSettingsSection = Configuration.GetSection("AppSettings");
             services.Configure<AppSettings>(appSettingsSection);
             var appSettings = appSettingsSection.Get<AppSettings>();
@@ -91,12 +99,13 @@ namespace Finall_Project
                            ValidateAudience = false
                        };
                    });
-            
         }
 
-// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
+            loggerFactory.AddNLog();
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -104,7 +113,7 @@ public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Finall_Project v1"));
             }
 
-            app.UseHttpsRedirection();  
+            app.UseHttpsRedirection();
 
             app.UseRouting();
 

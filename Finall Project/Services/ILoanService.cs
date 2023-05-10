@@ -1,4 +1,5 @@
 ﻿using LoanAPI.Data;
+using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 
 namespace Finall_Project.Services
@@ -8,7 +9,8 @@ namespace Finall_Project.Services
         Loan AddLoan(Loan loan);
         Loan GetLoanById(int id);
         List<Loan> GetAll();
-        Loan Update(Loan loan);
+        Loan UpdateLoan(Loan loan);
+        Loan UpdateLoanById(Loan loan);
         void DeleteLoanById(int id);
 
     }
