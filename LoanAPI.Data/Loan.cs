@@ -17,7 +17,7 @@ namespace LoanAPI.Data
         public int UserId { get; set; }
     }
 
-    public class UpdateLoanByID
+    public class UserModifyLoan
     {
         [Required(ErrorMessage = "LoanType is required")]
         public LoanType LoanType { get; set; }

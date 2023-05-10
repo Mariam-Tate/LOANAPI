@@ -23,15 +23,14 @@ namespace Finall_Project.Controllers
     [Route("api/[controller]")]
     public class UserController : Controller
     {
-
-        private readonly AppSettings _appSettings;
         private readonly IUserService _userService;
+        private readonly JwtTokenHelper _jwtHelper;
 
-        public UserController(IOptions<AppSettings> appSettings, IUserService userService)
+        public UserController(IUserService userService,
+                              JwtTokenHelper jwtHelper)
         {
-
-            _appSettings = appSettings.Value;
             _userService = userService;
+            _jwtHelper = jwtHelper;
         }
 
         [AllowAnonymous]
@@ -42,7 +41,7 @@ namespace Finall_Project.Controllers
             if (user == null)
                 return BadRequest("Username or Password is incorrect");
 
-            string tokenString = GenerateToken(user);
+           string tokenString = _jwtHelper.GenerateToken(user);
             return Ok(new
             {
                 user.UserName,
@@ -103,10 +102,10 @@ namespace Finall_Project.Controllers
             {
                 return NotFound();
             }
-            //if (id != GetCurrentId(HttpContext))
-            //{
-            //    return BadRequest("can't get information about another user");
-            //}
+            if (id != _jwtHelper.GetCurrentId())
+            {
+                return BadRequest("can't get information about another user");
+            }
             return Ok(user);
         }
 
@@ -119,17 +118,17 @@ namespace Finall_Project.Controllers
 
             var users = _userService.GetAll();
             return
-          
+
                 Ok(users);
         }
 
         [HttpPut("updateuser/{id}")]
         public IActionResult UpdatUserById(int id, [FromBody] User user)
         {
-            //if (id != GetCurrentId(HttpContext)) //tu mivutite zevit swori da qvevit araswori id mainc cvlis
-            //{
-            //    return BadRequest("can't update another user");
-            //}
+            if (id != _jwtHelper.GetCurrentId()) //tu mivutite zevit swori da qvevit araswori id mainc cvlis
+            {
+                return BadRequest("can't update another user");
+            }
             var validator = new UserValidator();
             var result = validator.Validate(user);
             List<string> errorsList = new();
@@ -205,50 +204,7 @@ namespace Finall_Project.Controllers
             return Ok($"User with id {id} deleted");
         }
 
-        private string GenerateToken(User user)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new Claim[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                    new Claim(ClaimTypes.Name, user.UserName.ToString()),
-                    new Claim(ClaimTypes.Role, user.Role.ToString())
-                }),
-                Expires = DateTime.UtcNow.AddMinutes(30),
-                SigningCredentials = new SigningCredentials(
-                    new SymmetricSecurityKey(key),
-                    SecurityAlgorithms.HmacSha256Signature)
-            };
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            var tokenString = tokenHandler.WriteToken(token);
-            return tokenString;
-        }
-
-       // //if you uncomment this, code goes to fetch error, it was working fine in the morning :)
-
-        //public int GetCurrentId(HttpContext context)
-        //{
-        //    var tokenHandler = new JwtSecurityTokenHandler();
-        //    var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
-        //    var token = context.Request.Headers["Authorization"].ToString().Split(" ")[1];
-        //    var tokenValidationParameters = new TokenValidationParameters
-        //    {
-        //        ValidateIssuerSigningKey = true,
-        //        IssuerSigningKey = new SymmetricSecurityKey(key),
-        //        ValidateIssuer = false,
-        //        ValidateAudience = false
-        //    };
-        //    var claimsPrincipal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var validatedToken);
-        //    var userIdClaim = claimsPrincipal.FindFirst(ClaimTypes.NameIdentifier);
-        //    if (userIdClaim != null)
-        //    {
-        //        var userId = int.Parse(userIdClaim.Value);
-        //        return userId;
-        //    }
-        //    return -1;
-        //}
+       
+        
     }
 }

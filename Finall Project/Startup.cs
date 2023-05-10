@@ -32,6 +32,7 @@ namespace Finall_Project
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHttpContextAccessor();
             services.AddLogging(loggingBuilder =>
             {
                 loggingBuilder.ClearProviders();
@@ -44,6 +45,7 @@ namespace Finall_Project
             services.AddScoped<ILoggerManager, LoggerManager>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ILoanService, LoanService>();
+            services.AddScoped<JwtTokenHelper>();
 
             services.AddControllers();
             services.AddCors();

@@ -24,23 +24,23 @@ namespace Finall_Project.Controllers
     {
         private readonly ILoanService _loanService;
         private readonly ILoggerManager _logger;
-        //private readonly UserService _userService;
-        //private readonly AppSettings _appSettings;
+        private readonly JwtTokenHelper _jwtHelper;
 
-        public LoanController(ILoanService loanService, ILoggerManager logger
-             /* , UserService userService, AppSettings appSettings*/)
+       
+
+        public LoanController(ILoanService loanService, ILoggerManager logger, JwtTokenHelper jwtHelper)
         {
             _loanService = loanService;
             _logger = logger;
-            //_userService = userService;
-            //_appSettings = appSettings;
+            _jwtHelper = jwtHelper;
+            
         }
 
         [HttpPost("addloan")]
-        public ActionResult<Loan> AddLoan([FromBody] Loan loan)
+        public ActionResult<UserModifyLoan> AddLoan([FromBody] UserModifyLoan newloan)
         {
-            var validator = new LoanValidator();
-            var result = validator.Validate(loan);
+            var validator = new UpdateLoanValidator();
+            var result = validator.Validate(newloan);
             List<string> errorsList = new();
             if (!result.IsValid)
             {
@@ -50,34 +50,46 @@ namespace Finall_Project.Controllers
                 }
                 return BadRequest(errorsList);
             }
-            if (loan.Status != Status.InProcess)
-            {
-                return BadRequest("Status should be In Process");
-            }
+            //if (loan.Status != Status.InProcess)
+            //{
+            //    return BadRequest("Status should be In Process");
+            //}
             //if (user.IsBlocked)
             //{
             //    return Forbid();
             //}
-            try
-            {
-                _loanService.AddLoan(loan);
+            
+                try
+                {
+                    var loanToAdd = new Loan
+                    {
+                        LoanType = newloan.LoanType,
+                        Amount = newloan.Amount,
+                        Currency = newloan.Currency,
+                        LoanPeriod = newloan.LoanPeriod,
+                        Status = Status.InProcess,
+                        UserId = _jwtHelper.GetCurrentId()
+                    };
+                    _loanService.AddLoan(loanToAdd);
+                }
+                catch (DbUpdateException e)
+                {
+                    return BadRequest($"{e.InnerException.Message}.\nLeave the ID fields empty");
+                }
+                return Created("", newloan);
+            
             }
-            catch (DbUpdateException e)
-            {
-                return BadRequest($"{e.InnerException.Message}.\nLeave the ID fields empty");
-            }
-            return Created("", loan);
-        }
 
         [HttpGet("get/{id}")]
-        public IActionResult GetLoanById(int id)
+        public IActionResult GetLoanByUserId(int id)
         {
-
             _logger.LogInfo("get info by id ");
-            //var currentuserId = int.Parse(User.Identity.Name);
-            //if (id != currentuserId)
-            //    return Forbid();
-            var loan = _loanService.GetLoanById(id);
+            if (id != _jwtHelper.GetCurrentId())
+            {
+                return BadRequest("can't get information about another user");
+            }
+            
+            var loan = _loanService.GetLoanByUserId(id);
             if (loan == null)
                 return NotFound();
 
@@ -96,35 +108,30 @@ namespace Finall_Project.Controllers
         }
 
         [Authorize(Roles = Role.Admin)]
-        [HttpPut("updateloans/{id}")]
-        public IActionResult UpdateLoan([FromBody] Loan loan)
+        [HttpPut("changeloanstatus/{id}")]
+        public IActionResult ChangeLoanstatus(int id, Status loanstatus)
         {
             if (!User.IsInRole(Role.Admin))
-                return Forbid("Only Administrator can use this feature");
-            var validator = new LoanValidator();
-            var result = validator.Validate(loan);
-            List<string> errorsList = new();
-            if (!result.IsValid)
-            {
-                foreach (var item in result.Errors)
-                {
-                    errorsList.Add(item.ErrorMessage);
-                }
-                return BadRequest(errorsList);
-            }
+                return Forbid("Only Administrator can update loanstatus");
             try
             {
-                _loanService.UpdateLoan(loan);
+                var loan = _loanService.GetLoanById(id);
+                if (loan == null)
+                {
+                    return NotFound($"There is no loan with id {id}");
+                }
+                _loanService.ChangeLoanstatus(id, loanstatus);
+
+                return Ok($"Loan with id {id} changed status to {loanstatus}");
             }
-            catch (DbUpdateConcurrencyException)
+            catch (ArgumentNullException)
             {
-                return NotFound($"There is no Loan to update with id {loan.Id}");
+                return NotFound($"There is no Loan with id {id}");
             }
-            return Ok(loan);
         }
 
         [HttpPut("updateloan/{id}")]
-        public IActionResult UpdateLoanById(int id, [FromBody] UpdateLoanByID updateLoan)
+        public IActionResult UpdateLoanById(int id, [FromBody] UserModifyLoan updateLoan)
         {
             var existingLoan = _loanService.GetLoanById(id);
             if (existingLoan == null)
@@ -132,12 +139,12 @@ namespace Finall_Project.Controllers
                 return NotFound("Loan not found");
             }
 
-            /*   var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-               if (existingLoan.UserID != currentUserId)
-               {
-                   return Forbid();
-               }
-            */
+            
+            if (existingLoan.UserId != _jwtHelper.GetCurrentId())
+            {
+                return Forbid();
+            }
+
             if (existingLoan.Status != Status.InProcess)
             {
                 return BadRequest("Loan can only be updated if it is in InProcess status");
@@ -180,12 +187,17 @@ namespace Finall_Project.Controllers
         [HttpDelete("deleteloan/{id}")]
         public IActionResult DeleteLoanById(int id)
         {
+            var existingLoan = _loanService.GetLoanById(id);
             var loan = _loanService.GetLoanById(id);
-            if (User.IsInRole(Role.Admin) || loan.Status == Status.InProcess 
-                /*&& loan.UserId == GetCurrentId(HttpContext)*/)
+            if (User.IsInRole(Role.Admin) || loan.Status == Status.InProcess
+                && existingLoan.UserId == _jwtHelper.GetCurrentId())
             {
                 _loanService.DeleteLoanById(id);
                 return Ok($"Loan with id {id} deleted");
+            }
+            if(existingLoan.UserId != _jwtHelper.GetCurrentId())
+            {
+                return Forbid();
             }
             try
             {
@@ -197,47 +209,5 @@ namespace Finall_Project.Controllers
             }
             return Ok($"Loan with id {id} deleted"); ;
         }
-
-        /* [HttpDelete("deleteloan/{id}")]
-         public IActionResult DeleteLoanById(int id)
-         {
-
-             var appSettings = Options.Create(new AppSettings());
-             var userService = new UserService();
-             var userController = new UserController(appSettings, userService);
-             var userId = userController.GetCurrentId(HttpContext);
-
-             var loan = _loanService.GetLoanById(id);
-
-             if (loan == null)
-             {
-                 return NotFound($"There is no loan with id {id}");
-             }
-             if (loan.UserId != userId)
-             {
-                 return BadRequest("can't get information about another user");
-             }
-
-             if (User.IsInRole(Role.Admin) || (loan.UserId == userId && loan.Status == Status.InProcess))
-             {
-                 _loanService.DeleteLoanById(id);
-                 return Ok($"Loan with id {id} deleted");
-             }
-
-             return Forbid("You do not have permission to delete this loan");
-         }
-         /* if (!User.IsInRole(Role.Admin))
-              return Forbid("Only Administrator can use this feature");
-          try
-          {
-              _loanService.DeleteLoanById(id);
-          }
-          catch (ArgumentNullException)
-          {
-              return NotFound($"There is no loan with id {id}");
-          }
-          return Ok($"Loan with id {id} deleted");
-      }*/
-
     }   
 }

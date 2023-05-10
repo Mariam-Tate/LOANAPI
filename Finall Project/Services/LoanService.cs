@@ -1,4 +1,5 @@
-﻿using LoanAPI.Data;
+﻿using Finall_Project.Enums;
+using LoanAPI.Data;
 using LoanAPI.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,18 +26,22 @@ namespace Finall_Project.Services
         public Loan GetLoanById(int id)
         {
             return _loans.Loans.FirstOrDefault(x => x.Id == id);
-            //return _loans.Loans.Include(a => _loans.Loans).FirstOrDefault(x => x.Id == id); es ewera da ?
         }
         public List<Loan> GetAll()
         {
             return _loans.Loans.ToList();
         }
-        public Loan UpdateLoan(Loan loan)
-        {
-            _loans.Loans.Update(loan);
-            _loans.SaveChanges();
-            return loan;
-        }
+        public Loan ChangeLoanstatus(int id, Status loanstatus)
+            {
+                var loan = _loans.Loans.FirstOrDefault(u => u.Id == id);
+                if (loan != null)
+                {
+                    loan.Status = loanstatus;
+                    _loans.Entry(loan).State = EntityState.Modified;
+                    _loans.SaveChanges();
+                }
+                return loan;
+            }
         public Loan UpdateLoanById(Loan loan)
         {
             _loans.Loans.Update(loan);
@@ -50,6 +55,10 @@ namespace Finall_Project.Services
             _loans.Loans.Remove(loan);
             _loans.SaveChanges();
             return;
+        }
+        public Loan GetLoanByUserId(int id)
+        {
+            return _loans.Loans.FirstOrDefault(x => x.UserId == id);
         }
     }
 }
