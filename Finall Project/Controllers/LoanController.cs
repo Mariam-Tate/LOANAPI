@@ -26,7 +26,9 @@ namespace Finall_Project.Controllers
         private readonly ILoggerManager _logger;
         private readonly JwtTokenHelper _jwtHelper;
 
-        public LoanController(ILoanService loanService, ILoggerManager logger, JwtTokenHelper jwtHelper)
+        public LoanController(ILoanService loanService, 
+                              ILoggerManager logger, 
+                              JwtTokenHelper jwtHelper)
         {
             _loanService = loanService;
             _logger = logger;
@@ -36,6 +38,7 @@ namespace Finall_Project.Controllers
         [HttpPost("addloan")]
         public ActionResult<UserModifyLoan> AddLoan([FromBody] UserModifyLoan newloan)
         {
+            _logger.LogInfo("get info about add loan ");
             var validator = new UpdateLoanValidator();
             var result = validator.Validate(newloan);
             List<string> errorsList = new();
@@ -47,15 +50,6 @@ namespace Finall_Project.Controllers
                 }
                 return BadRequest(errorsList);
             }
-            //if (loan.Status != Status.InProcess)
-            //{
-            //    return BadRequest("Status should be In Process");
-            //}
-            //if (user.IsBlocked)
-            //{
-            //    return Forbid();
-            //}
-            
                 try
                 {
                     var loanToAdd = new Loan
@@ -130,6 +124,7 @@ namespace Finall_Project.Controllers
         [HttpPut("updateloan/{id}")]
         public IActionResult UpdateLoanById(int id, [FromBody] UserModifyLoan updateLoan)
         {
+            _logger.LogInfo("get info about loan update");
             var existingLoan = _loanService.GetLoanById(id);
             if (existingLoan == null)
             {
@@ -184,6 +179,7 @@ namespace Finall_Project.Controllers
         [HttpDelete("deleteloan/{id}")]
         public IActionResult DeleteLoanById(int id)
         {
+            _logger.LogInfo("get info about loan delete ");
             var existingLoan = _loanService.GetLoanById(id);
             var loan = _loanService.GetLoanById(id);
             if (User.IsInRole(Role.Admin) || loan.Status == Status.InProcess

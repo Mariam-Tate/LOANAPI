@@ -14,7 +14,8 @@ namespace Finall_Project.Helpers
         private readonly HttpContext _httpContext;
         private readonly string _secret;
 
-        public JwtTokenHelper(IHttpContextAccessor httpContextAccessor, IConfiguration config)
+        public JwtTokenHelper(IHttpContextAccessor httpContextAccessor, 
+                              IConfiguration config)
         {
             this._httpContext = httpContextAccessor.HttpContext;
             this._secret = config.GetSection("AppSettings").GetValue<string>("Secret");

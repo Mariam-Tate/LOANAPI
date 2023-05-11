@@ -4,6 +4,7 @@ using Finall_Project.Services;
 using Finall_Project.Validators;
 using LoanAPI.Data;
 using LoanAPI.Domain;
+using LoggerService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -25,11 +26,15 @@ namespace Finall_Project.Controllers
     {
         private readonly IUserService _userService;
         private readonly JwtTokenHelper _jwtHelper;
+        private readonly ILoggerManager _logger;
 
-        public UserController(IUserService userService, JwtTokenHelper jwtHelper)
+        public UserController(IUserService userService, 
+                              JwtTokenHelper jwtHelper, 
+                              ILoggerManager logger)
         {
             _userService = userService;
             _jwtHelper = jwtHelper;
+            _logger = logger;
         }
 
         [AllowAnonymous]
@@ -51,8 +56,9 @@ namespace Finall_Project.Controllers
 
         [AllowAnonymous]
         [HttpPost("adduser")]
-        public ActionResult<User> AddUser([FromBody] User user)
+        public ActionResult<User> AddUser(User user)
         {
+            _logger.LogInfo("get info about registration ");
             var validator = new UserValidator();
             var result = validator.Validate(user);
             List<string> errorsList = new();
@@ -85,9 +91,9 @@ namespace Finall_Project.Controllers
                 _userService.AddUser(user);
             }
 
-            catch (DbUpdateException e)
+            catch (Exception e)
             {
-                return BadRequest($"{e.InnerException.Message}.\nLeave the ID fields empty");
+                return BadRequest($"{e.InnerException.Message}.\n fill the correct values");
             }
 
             return Ok(user);
@@ -96,6 +102,7 @@ namespace Finall_Project.Controllers
         [HttpGet("get/{id}")]
         public IActionResult GetUserById(int id)
         {
+            _logger.LogInfo("get info about get user by id");
             var user = _userService.GetUserById(id);
             if (user == null)
             {
@@ -122,8 +129,9 @@ namespace Finall_Project.Controllers
         }
 
         [HttpPut("updateuser/{id}")]
-        public IActionResult UpdatUserById(int id, [FromBody] User user)
+        public IActionResult UpdatUserById(int id, User user)
         {
+            _logger.LogInfo("get info update user");
             if (id != _jwtHelper.GetCurrentId()) //tu mivutite zevit swori da qvevit araswori id mainc cvlis
             {
                 return BadRequest("can't update another user");

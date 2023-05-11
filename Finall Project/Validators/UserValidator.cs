@@ -34,6 +34,8 @@ namespace Finall_Project.Validators
                     .Must(r => r == "User" || r == "Admin").WithMessage("Role must be User or Admin");
             RuleFor(x => x.IsBlocked)
                     .NotNull().WithMessage("Status is required");
+
+
         }
     }
 }
