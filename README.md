@@ -82,12 +82,12 @@ insert id
 
 here are endpoints that only Admin user can use:
 - Get all users
-- Block user
+- Block user:
 insert id
-- Delete user
+- Delete user:
 insert id
 
-- Add Loan
+- Add Loan:
 {
   "loanType": 1,
   "amount": 0,
@@ -95,10 +95,10 @@ insert id
   "loanPeriod": 0
 }
 
-- Get loan by id
+- Get loan by id:
 insert id
 
-- Updateloan by id
+- Updateloan by id:
 insert id
 {
   "loanType": 1,
@@ -107,12 +107,12 @@ insert id
   "loanPeriod": 0
 }
 here are endpoints that only Admin user can use:
-- ChangeLoanstatus by id
+- ChangeLoanstatus by id:
 insert id
 insert loanstatus
  
 - Get all loans
-- Delete Loan by id
+- Delete Loan by id:
 insert id
 
 Basic Flow
