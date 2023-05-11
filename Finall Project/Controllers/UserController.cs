@@ -26,8 +26,7 @@ namespace Finall_Project.Controllers
         private readonly IUserService _userService;
         private readonly JwtTokenHelper _jwtHelper;
 
-        public UserController(IUserService userService,
-                              JwtTokenHelper jwtHelper)
+        public UserController(IUserService userService, JwtTokenHelper jwtHelper)
         {
             _userService = userService;
             _jwtHelper = jwtHelper;

@@ -26,14 +26,11 @@ namespace Finall_Project.Controllers
         private readonly ILoggerManager _logger;
         private readonly JwtTokenHelper _jwtHelper;
 
-       
-
         public LoanController(ILoanService loanService, ILoggerManager logger, JwtTokenHelper jwtHelper)
         {
             _loanService = loanService;
             _logger = logger;
-            _jwtHelper = jwtHelper;
-            
+            _jwtHelper = jwtHelper; 
         }
 
         [HttpPost("addloan")]

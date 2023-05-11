@@ -3,8 +3,6 @@ using Finall_Project.Validators;
 using FluentValidation.TestHelper;
 using LoanAPI.Data;
 using Finall_Project.Enums;
-using System.Linq;
-using Finall_Project.Services;
 
 [TestClass]
 public class ValidatorTests
